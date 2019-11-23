@@ -6,12 +6,13 @@ package com.app.git.api.rest.main;
 import java.io.IOException;
 import java.net.MalformedURLException;
 
-import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.StatusType;
 
 import com.app.git.api.rest.exception.GitApiBaseException;
 import com.app.git.api.rest.model.User;
@@ -23,28 +24,51 @@ import com.app.git.api.rest.services.GitApiRestfulServices;
  */
 
 @Path("/git")
-@Consumes(MediaType.APPLICATION_XML)				
-@Produces(MediaType.APPLICATION_XML)	
+//@Consumes(MediaType.APPLICATION_JSON)				
+@Produces(MediaType.APPLICATION_JSON)	
 public class GitApiRestfulServiceManager {
 
 	GitApiRestfulServices gitApiRestfulServices = new GitApiRestfulServices();
 	
 	@GET
 	@Path("/{user}/get")
-	public User getUserProjects(@PathParam("user") String userId) {
+	public Response getUserProjects(@PathParam("user") String userId) {
 		User userObj=null;
 			try {
 				userObj=gitApiRestfulServices.getApiResponse(userId);
+				
 			} catch (MalformedURLException e) {
-				e.printStackTrace();
+				return getResponse(e,Response.Status.FORBIDDEN);
 			} catch (IOException e) {
-				e.printStackTrace();
+				return getResponse(e,Response.Status.BAD_REQUEST);
 			} catch (GitApiBaseException e) {
-				e.printStackTrace();
+				return Response
+					      .status(e.getErrorCode())
+					      .entity(e.getMessage())
+					      .type("text/plain")
+					      .build();
 			} catch (Exception e) {
-				System.out.println(e);
+				return Response
+					      .status(1000)
+					      .entity(e.getMessage())
+					      .type("text/plain")
+					      .build();
 			}
-			return userObj;
+			return Response
+				      .status(Response.Status.OK)
+				      .entity(userObj)
+				      .build();
 	
+	}
+
+	/**
+	 * @param e
+	 * @return
+	 */
+	private Response getResponse(Exception e,StatusType status) {
+		return Response
+			      .status(status)
+			      .entity(e.getMessage())
+			      .build();
 	}
 }
